@@ -1,0 +1,45 @@
+#!/bin/sh
+# setnetwork - configure network interface
+# Usage: setnetwork <mode> <address> <mask> <gateway> <dns> <hostname>
+#   mode: dhcp | static
+
+MODE="${1:-dhcp}"
+ADDRESS="$2"
+MASK="${3:-255.255.255.0}"
+GATEWAY="$4"
+DNS="${5:-8.8.8.8}"
+HOSTNAME="$6"
+
+IFACE=$(ip route 2>/dev/null | awk '/default/ {print $5}' | head -n1)
+IFACE="${IFACE:-eth0}"
+NETWORK_CONF="/etc/network/interfaces"
+
+[ -n "$HOSTNAME" ] && hostname "$HOSTNAME" && echo "$HOSTNAME" > /etc/hostname
+
+cat > "$NETWORK_CONF" <<EOF
+auto lo
+iface lo inet loopback
+
+auto ${IFACE}
+EOF
+
+if [ "$MODE" = "static" ] && [ -n "$ADDRESS" ]; then
+    cat >> "$NETWORK_CONF" <<EOF
+iface ${IFACE} inet static
+    address ${ADDRESS}
+    netmask ${MASK}
+    gateway ${GATEWAY}
+    dns-nameservers ${DNS}
+EOF
+else
+    cat >> "$NETWORK_CONF" <<EOF
+iface ${IFACE} inet dhcp
+EOF
+fi
+
+if [ -n "$DNS" ]; then
+    echo "nameserver ${DNS}" > /etc/resolv.conf
+fi
+
+echo "Network configuration written to ${NETWORK_CONF}."
+echo "Restart networking or reboot to apply changes."

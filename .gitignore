@@ -1,0 +1,10 @@
+# Runtime temporary files
+/tmp/
+
+# Editor and OS artifacts
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
