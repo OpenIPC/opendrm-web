@@ -1,0 +1,30 @@
+#!/bin/sh
+# updateopendrm - download and install the latest opendrm-web release
+
+set -e
+
+REPO="OpenIPC/opendrm-web"
+INSTALL_DIR="/www"
+TMP_DIR="/tmp/opendrm-update"
+GITHUB_API="https://api.github.com/repos/${REPO}/releases/latest"
+
+echo "Checking for latest release of ${REPO}..."
+
+url=$(wget -q -T10 -O- "$GITHUB_API" 2>/dev/null \
+    | grep '"tarball_url"' | head -n1 | cut -d'"' -f4)
+
+if [ -z "$url" ]; then
+    echo "Error: could not retrieve release information." >&2
+    exit 1
+fi
+
+echo "Downloading $url..."
+mkdir -p "$TMP_DIR"
+wget -q -T30 -O "$TMP_DIR/release.tar.gz" "$url"
+
+echo "Installing..."
+tar -xzf "$TMP_DIR/release.tar.gz" -C "$TMP_DIR" --strip-components=1
+cp -r "$TMP_DIR/www/"* "$INSTALL_DIR/"
+rm -rf "$TMP_DIR"
+
+echo "OpenDRM-web updated successfully."
